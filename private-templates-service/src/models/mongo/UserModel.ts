@@ -14,13 +14,9 @@ export const UserSchema: Schema = new Schema({
         email: Schema.Types.String
     },
     {
-        versionKey: false,
-        timestamps: {createdAt: false, updatedAt: true}
+        versionKey: false // we don't need version for user
     }
 );
-// UserSchema.pre("save", function(next) {
-//     this.
-// })
 
 
 export default function <T extends mongoose.Document>(db: mongoose.Connection, collection: string, 

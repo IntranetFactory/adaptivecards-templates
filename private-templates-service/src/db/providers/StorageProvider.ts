@@ -78,6 +78,8 @@ export abstract class StorageProvider {
     // Folder Retrieval
     abstract getFolder(query: Queries.FolderQuery) : [Collections.Folder];
 
+    abstract encodeTemplate(template: string) : string;
+
 }
 
 
