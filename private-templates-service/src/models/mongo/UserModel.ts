@@ -1,9 +1,9 @@
-import mongoose, { Schema } from 'mongoose'
+import mongoose, { Schema, Mongoose } from 'mongoose'
 
 export interface IUser extends mongoose.Document {
-    _id: string,
-    teamID: [string],
-    orgID: [string],
+    _id: mongoose.Types.ObjectId,
+    teamID: [mongoose.Types.ObjectId],
+    orgID: [mongoose.Types.ObjectId],
     email: string
 }
 
@@ -11,12 +11,17 @@ export const UserSchema: Schema = new Schema({
         _id: Schema.Types.ObjectId,
         teamID: [Schema.Types.ObjectId],
         orgID: [Schema.Types.ObjectId],
-        email: String
+        email: Schema.Types.String
     },
     {
-        versionKey: false
+        versionKey: false,
+        timestamps: {createdAt: false, updatedAt: true}
     }
 );
+// UserSchema.pre("save", function(next) {
+//     this.
+// })
+
 
 export default function <T extends mongoose.Document>(db: mongoose.Connection, collection: string, 
                         schema: Schema) : mongoose.Model<T>{

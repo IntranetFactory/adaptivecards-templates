@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 import {Collections, Queries, StorageProvider } from './StorageProvider'
 import getCollection, { UserSchema, IUser } from '../../models/mongo/UserModel'
 
@@ -17,20 +17,38 @@ export class MongoDBProvider extends StorageProvider {
     }
 
     findUser() {
-        this.User.findOne({email: "seva@microsoft.com"})
-        .then(result => {console.log(result); this.db.close()})
+        this.addUser();
+        MongoDBProvider.User.findOne({email: "hello@microsoft.com"})
+        .then(result => {
+            console.log(result?._id.getTimestamp());
+            // console.log(result?);
+            console.log(result);
+            this.db.close();
+
+        })
         .catch(error => (console.log(error)));
+    }
+    addUser() {
+        let user: IUser = new MongoDBProvider.User ({
+            // _id: new mongoose.Types.ObjectId(),
+            teamID: [new mongoose.Types.ObjectId()],
+            orgID: [new mongoose.Types.ObjectId()],
+            email: "hello@microsoft.com"
+            });
+        user.save().then(result => {
+            // console.log(result);
+            // mongoose.disconnect();
+        });
     }
     
     db: mongoose.Connection;
-    User: mongoose.Model<IUser>;
+    static User: mongoose.Model<IUser>;
 
     constructor(connectionString: string) {
         super(connectionString)
         this.db = mongoose.createConnection(connectionString);
-        this.User = getCollection<IUser>(this.db, USERS_COLLECTION_NAME_SINGULAR, 
+        MongoDBProvider.User = getCollection<IUser>(this.db, USERS_COLLECTION_NAME_SINGULAR, 
                                     UserSchema);
-        let m: IUser = new this.User();
     }
 }
 
