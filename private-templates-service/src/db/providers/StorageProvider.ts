@@ -3,9 +3,11 @@ export module Queries {
 
     export interface TemplateQuery {
         templateID?: string,
-        ownerID? : string,
-        folderID? : string,
+        version?: number,
+        tags?: [string],
         isPublished? : boolean,
+        owner?: string
+        //sort
         // permissions? : [enum]
     }
 
@@ -26,7 +28,6 @@ export module Queries {
 
     }
 }
-
 
 export module Collections {
     export class User {

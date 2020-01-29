@@ -1,16 +1,16 @@
-import mongoose, { Schema, Mongoose } from 'mongoose'
+import mongoose, { Schema, Mongoose, SchemaTypes } from 'mongoose'
 
 export interface IUser extends mongoose.Document {
     _id: mongoose.Types.ObjectId,
-    teamID: [mongoose.Types.ObjectId],
-    orgID: [mongoose.Types.ObjectId],
+    team: [string],
+    org: [string],
     email: string
 }
 
 export const UserSchema: Schema = new Schema({
-        _id: Schema.Types.ObjectId,
-        teamID: [Schema.Types.ObjectId],
-        orgID: [Schema.Types.ObjectId],
+        // _id: Schema.Types.ObjectId,
+        team: {type: [Schema.Types.String], default: []},
+        org: {type: [Schema.Types.String], default: []},
         email: Schema.Types.String
     },
     {
