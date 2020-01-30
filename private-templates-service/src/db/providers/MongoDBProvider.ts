@@ -1,32 +1,31 @@
-import mongoose, { Schema } from 'mongoose'
-import {Collections, Queries, StorageProvider } from './StorageProvider'
-import getCollection, { UserSchema, IUser } from '../../models/mongo/UserModel'
-import {ITemplate, TemplateSchema} from '../../models/mongo/TemplateModel'
-import { json } from 'express'
+import mongoose, { Schema, Mongoose, Query, Collection } from 'mongoose'
+import {Collections, Queries, StorageProvider, Interface} from './StorageProvider'
+import { UserSchema, IUserModel } from '../models/mongo/UserModel'
+import { ITemplateModel, TemplateSchema } from '../models/mongo/TemplateModel'
+import {Mongo} from '../utils/mongoutils'
+import MONGO_CONFIG from '../config/mongo.json'
 
 const USERS_COLLECTION_NAME_SINGULAR: string = 'User'
 const TEMPLATES_COLLECTION_NAME_SINGULAR: string = 'Template'
 
 
 export class MongoDBProvider extends StorageProvider {
-    static Template: mongoose.Model<ITemplate>;
-    static User: mongoose.Model<IUser>;
+    Template!: mongoose.Model<ITemplateModel>;
+    User!: mongoose.Model<IUserModel>;
     db!: mongoose.Connection // ! - for definite assignment
 
-
-
-
-    // Base64 is used here due to mongo not supporting $ in key values
-    encodeTemplate(template: string): string {
-        return btoa(template);
-    }
     getTemplate(query: Queries.TemplateQuery): [Collections.Template] {
-        MongoDBProvider.Template.find(query).then(result => console.log(result));
-        return [new Collections.Template("", JSON.parse("{}"), "", "", true)];
+        let templates: [Collections.Template];
+        this.Template.find(query)
+        .then(result => {
+            console.log(result);
+
+        });
+        return [new Collections.Template([], JSON.parse("{}"), "", new Date(Date.now()), new Date(Date.now()), true)];
     }
     getUser(query: Queries.UserQuery): [Collections.User] {
-        let user: IUser;
-        MongoDBProvider.User.findOne(query)
+        let user: IUserModel;
+        this.User.findOne(query)
         .then(result => {
             if (result?._id) {
                 console.log("found it");
@@ -36,66 +35,57 @@ export class MongoDBProvider extends StorageProvider {
         .catch(err => console.log(err));
         return [new Collections.User("", "", "", "")];
     }
-    getFolder(query: Queries.FolderQuery): [Collections.Folder] {
-        throw new Error("Method not implemented.")
-    }
 
-    addTemplate(query: Queries.TemplateQuery) : void {
-        let template: ITemplate = new MongoDBProvider.Template(query)
+
+    async addUser(user: Collections.User) : Promise<void> {
+            let newUser: IUserModel = new this.User(Mongo.Utils.objToJSON(user));
+            newUser.save()
+            .then(result => console.log(result))
+            .catch(err => console.log("Error: " + err));
+    }
+    addTemplate(user: Collections.User) : void {
+        let template: ITemplateModel = new this.Template(user)
         template.save().then(result => console.log(result));
     }
 
-    // findUser(query: Queries.UserQuery) {
-    //     // let user: IUser = MongoDBProvider.User.findOne(query);
-    //     return user;
-        
-    // }
-    addUser(query: Queries.UserQuery) : void {
-        try {
-            let user: IUser = new MongoDBProvider.User(query);
-        // let user: IUser = new MongoDBProvider.User ({
-        //     _id: new mongoose.Types.ObjectId(),
-        //     teamID: [new mongoose.Types.ObjectId()],
-        //     orgID: [new mongoose.Types.ObjectId()],
-        //     email: "hello@microsoft.com"
-        //     });
-            user.save().then(result => {
-                console.log(result);
-            // mongoose.disconnect();
-            });
-        } catch(e) {
-            console.log(e);
-        }
-    }
 
-    connectToDB() : void {
-        try {
-            this.db = mongoose.createConnection(this.connectionString, {
-                connectTimeoutMS : 5000,
-                autoReconnect: true,
-                socketTimeoutMS: 30000
-                
-            });
-        } catch(e) {
-            console.log(e);
-        }
-    }
-
+    // Set up mongoose models to work with the chosen collections
     setUpCollections() : void {
         try {
-            MongoDBProvider.User = getCollection<IUser>(this.db, USERS_COLLECTION_NAME_SINGULAR, 
+            this.User = Mongo.Model.getCollection<IUserModel>(this.db, USERS_COLLECTION_NAME_SINGULAR, 
                 UserSchema);
-            MongoDBProvider.Template = getCollection<ITemplate>(this.db, TEMPLATES_COLLECTION_NAME_SINGULAR, 
+            this.Template = Mongo.Model.getCollection<ITemplateModel>(this.db, TEMPLATES_COLLECTION_NAME_SINGULAR, 
                 TemplateSchema);
+            let temp: IUserModel = new this.User({org: "hello"});
+            temp.save();
         } catch (e) {
             console.log(e);
         }
     }
 
+    async initializeDB() : Promise<void> {
+        await mongoose.createConnection(this.connectionString, MONGO_CONFIG)
+        .then(connection => {
+            this.db = connection;
+            this.setUpCollections();
+        })
+        .catch(error => {
+            console.log(error)
+        });
+    }
+
+    async connect() : Promise<void>{
+        await this.initializeDB();
+    }
+
+    close() {
+        this.db.close()
+            .then(result => console.log(result))
+            .catch(err => console.log(err));
+    }
+
     constructor(connectionString: string) {
         super(connectionString)
-        this.connectToDB();
-        this.setUpCollections();
     }
 }
 

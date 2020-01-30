@@ -1,10 +1,34 @@
 // Base class for all the StorageProviders.
-export module Queries {
+module Interface {
+    export interface IUser {
+        _id?: string,
+        team: string[],
+        org: string[],
+        email: string
+    }
+
+    export interface ITemplateInstance {
+        json: string,
+        version: string
+    }
+
+    export interface ITemplate {
+        _id?: string,
+        instances: ITemplateInstance[],
+        tags: string[],
+        owner: string,
+        createdAt: Date,
+        updatedAt: Date,
+        isPublished: boolean
+    }
+}
+
+module Queries {
 
     export interface TemplateQuery {
         templateID?: string,
         version?: number,
-        tags?: [string],
+        tags?: string[],
         isPublished? : boolean,
         owner?: string
         //sort
@@ -13,8 +37,8 @@ export module Queries {
 
     export interface UserQuery {
         userID? : string,
-        teamID? : [string],
-        orgID? : [string],
+        teamID? : string[],
+        orgID? : string[],
         email?: string
     }
 
@@ -22,51 +46,60 @@ export module Queries {
         folderID? : string,
         folderName? : string,
         parentID? : string,
-        childTemplatesID?: [string],
-        childFoldersID?: [string],
+        childTemplatesID?: string[],
+        childFoldersID?: string[],
         // permissions? : [enum]
 
     }
 }
 
-export module Collections {
-    export class User {
-        userID: string;
-        teamID: string;
-        orgID: string;
+
+module Collections {
+    export class User implements Interface.IUser {
+        _id?: string;
+        team: string[] = new Array();
+        org: string[] = new Array();
         email: string;
-        constructor(userID: string, teamID: string, orgID: string, email:string) {
-            this.userID = userID;
-            this.teamID = teamID;
-            this.orgID = orgID;
+
+        
+        constructor(team: string, org: string, email:string, _id?: string,) {
+            this.team.push(team);
+            this.org.push(org);
             this.email = email;
+            if(_id) {
+                this._id = _id;
+            }
         }
     }
     
-    export class Template {
-        templateID: string;
-        json: JSON;
-        ownerID: string;
-        folderID: string;
-        // permission: []
+    export class Template implements Interface.ITemplate {
+        _id?: string;
+        instances: Interface.ITemplateInstance[] = new Array()
+        tags: string[] = new Array();
+        owner: string;
+        createdAt: Date;
+        updatedAt: Date;
         isPublished: boolean;
-        constructor(templateID: string, json: JSON, ownerID: string,
-                                     folderID: string, isPublished: boolean) {
-            this.templateID = templateID;
-            this.json = json;
-            this.ownerID = ownerID;
-            this.folderID = folderID;
+        
+        
+        // permission: []
+        constructor(instances: Interface.ITemplateInstance[], tags: string[],
+                                 owner: string, createdAt: Date, 
+                                 updatedAt: Date, isPublished: boolean, _id?: string) {
+            this.instances.concat(instances);
+            this.tags.concat(tags);
+            this.owner = owner;
+            this.createdAt = createdAt;
+            this.updatedAt = updatedAt;
             this.isPublished = isPublished;
+            if(_id) {
+                this._id = _id;
+            }
         }
     }
-
-    export class Folder {
-
-    }
-
 }
 
-export abstract class StorageProvider {
+abstract class StorageProvider {
     protected connectionString: string;
     constructor(connectionString: string) {
         this.connectionString = connectionString;
@@ -76,12 +109,12 @@ export abstract class StorageProvider {
     abstract getTemplate(query: Queries.TemplateQuery) : [Collections.Template];
     // User Retrieval
     abstract getUser(query: Queries.UserQuery) : [Collections.User];
-    // Folder Retrieval
-    abstract getFolder(query: Queries.FolderQuery) : [Collections.Folder];
 
-    abstract encodeTemplate(template: string) : string;
+    abstract addUser(user: Collections.User) : void;
+    abstract addTemplate(user: Collections.User) : void;
 
 }
 
+export {Collections, Interface, Queries, StorageProvider};
 
 
