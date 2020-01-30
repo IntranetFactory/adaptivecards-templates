@@ -79,7 +79,7 @@ module Collections {
         owner: string;
         createdAt: Date;
         updatedAt: Date;
-        isPublished: boolean;
+        isPublished: boolean;   
         
         
         // permission: []
